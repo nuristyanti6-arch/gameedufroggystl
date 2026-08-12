@@ -1,0 +1,1229 @@
+import os
+
+# Define content of single file HTML web app
+html_content = """<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Froggy Indus Adventure - Peradaban India Kuno</title>
+    <style>
+        :root {
+            --primary-blue: #1e3d59;
+            --accent-gold: #ff6e40;
+            --gold-bright: #ffc107;
+            --river-blue: #17b978;
+            --bg-dark: #0a192f;
+            --p1-color: #29b6f6;
+            --p2-color: #66bb6a;
+            --p3-color: #ffa726;
+            --p4-color: #ab47bc;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-family);
+            background-color: var(--bg-dark);
+            color: #fff;
+        }
+
+        /* Canvas Background */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* App Container */
+        #app {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(10, 25, 47, 0.85);
+            backdrop-filter: blur(8px);
+            border-bottom: 2px solid rgba(255, 193, 7, 0.3);
+            height: 60px;
+        }
+
+        .logo-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--gold-bright);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: var(--gold-bright);
+            color: var(--gold-bright);
+        }
+
+        /* Main Screen Manager */
+        .screen {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 60px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            transform: scale(0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        /* Main Menu */
+        #mainMenu {
+            text-align: center;
+            background: rgba(10, 25, 47, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin: auto;
+            max-width: 600px;
+            width: 90%;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .title-container h1 {
+            font-size: 2.2rem;
+            color: var(--gold-bright);
+            text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .title-container p {
+            font-size: 1rem;
+            color: #b0bec5;
+            margin-bottom: 25px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-main {
+            background: linear-gradient(135deg, #1e3d59, #17b978);
+            border: none;
+            color: white;
+            padding: 14px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(23, 185, 120, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--gold-bright);
+        }
+
+        /* Modal Overlays */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #102a43;
+            border: 2px solid var(--gold-bright);
+            border-radius: 16px;
+            padding: 25px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: #e2e8f0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+        }
+
+        .modal-content h2 {
+            color: var(--gold-bright);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .modal-content p, .modal-content ul {
+            margin-bottom: 12px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .modal-content ul {
+            padding-left: 20px;
+        }
+
+        .btn-close {
+            margin-top: 15px;
+            width: 100%;
+            padding: 10px;
+            background: var(--accent-gold);
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Game Layout Grid System */
+        #gameScreen {
+            padding: 10px;
+            display: grid;
+            gap: 10px;
+            width: 100%;
+            height: calc(100% - 60px);
+        }
+
+        /* Dynamic Layouts based on Mode */
+        #gameScreen.mode-solo {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
+        }
+
+        #gameScreen.mode-duel {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr;
+        }
+
+        #gameScreen.mode-squad {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+
+        /* Game Instance Viewport */
+        .player-viewport {
+            position: relative;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .player-viewport.p1 { border-color: var(--p1-color); }
+        .player-viewport.p2 { border-color: var(--p2-color); }
+        .player-viewport.p3 { border-color: var(--p3-color); }
+        .player-viewport.p4 { border-color: var(--p4-color); }
+
+        /* Player Header Stats */
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 20;
+        }
+
+        .player-badge {
+            font-weight: bold;
+            font-size: 0.85rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            color: #fff;
+        }
+
+        .p1 .player-badge { background: var(--p1-color); }
+        .p2 .player-badge { background: var(--p2-color); }
+        .p3 .player-badge { background: var(--p3-color); }
+        .p4 .player-badge { background: var(--p4-color); }
+
+        .stat-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .lives-box {
+            color: #ff4d4d;
+            letter-spacing: 2px;
+        }
+
+        .score-box {
+            color: var(--gold-bright);
+        }
+
+        /* Game Simulation Area inside Viewport */
+        .sim-area {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* Question Overlay Banner */
+        .question-card {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 10px;
+            padding: 10px 14px;
+            text-align: center;
+            z-index: 15;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+        }
+
+        .question-card p {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #f8fafc;
+            line-height: 1.3;
+        }
+
+        /* Floating Leaf Options Container */
+        .options-grid {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 0 15px;
+            z-index: 15;
+        }
+
+        .leaf-btn {
+            background: linear-gradient(135deg, #1e7e34, #28a745);
+            border: 2px solid #5cdb95;
+            border-radius: 20px 5px 20px 5px;
+            padding: 10px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+
+        .leaf-btn:hover {
+            transform: scale(1.03);
+            background: linear-gradient(135deg, #28a745, #34ce57);
+        }
+
+        /* Frog Animation Canvas or CSS Element */
+        .frog-container {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            z-index: 10;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .frog-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        }
+
+        /* Frog Animations */
+        @keyframes frogHappy {
+            0% { transform: translateX(-50%) translateY(0) scale(1); }
+            30% { transform: translateX(-50%) translateY(-30px) scale(1.1); }
+            60% { transform: translateX(-50%) translateY(0) scale(0.9); }
+            80% { transform: translateX(-50%) translateY(-15px) scale(1.05); }
+            100% { transform: translateX(-50%) translateY(0) scale(1); }
+        }
+
+        @keyframes frogSinking {
+            0% { transform: translateX(-50%) translateY(0) scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: translateX(-50%) translateY(20px) scale(0.8) rotate(20deg); opacity: 0.8; }
+            100% { transform: translateX(-50%) translateY(50px) scale(0.2) rotate(45deg); opacity: 0; }
+        }
+
+        .frog-container.happy {
+            animation: frogHappy 0.6s ease-in-out;
+        }
+
+        .frog-container.sinking {
+            animation: frogSinking 0.8s forwards ease-in;
+        }
+
+        /* Splash Effect Canvas overlay per viewport */
+        .viewport-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Results Screen */
+        #resultsScreen {
+            background: rgba(10, 25, 47, 0.9);
+            text-align: center;
+        }
+
+        .results-card {
+            background: #102a43;
+            border: 2px solid var(--gold-bright);
+            border-radius: 20px;
+            padding: 25px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .results-card h2 {
+            font-size: 2rem;
+            color: var(--gold-bright);
+            margin-bottom: 20px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .leaderboard-table th {
+            color: var(--gold-bright);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            #gameScreen.mode-duel, #gameScreen.mode-squad {
+                grid-template-columns: 1fr;
+            }
+
+            .title-container h1 { font-size: 1.6rem; }
+            .question-card p { font-size: 0.85rem; }
+            .leaf-btn { font-size: 0.75rem; padding: 6px; min-height: 50px; }
+            .frog-container { width: 45px; height: 45px; bottom: 110px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Background Canvas (Water, Rain, Fog) -->
+    <canvas id="bgCanvas"></canvas>
+
+    <div id="app">
+        <!-- Header Bar -->
+        <header>
+            <div class="logo-title">
+                <span>🐸</span> FROGGY INDUS
+            </div>
+            <div class="header-controls">
+                <button class="btn-icon" id="bgmBtn" onclick="toggleBGM()">🔊 Music</button>
+                <button class="btn-icon" id="fullscreenBtn" onclick="toggleFullscreen()">⛶ Full Screen</button>
+            </div>
+        </header>
+
+        <!-- Main Menu Screen -->
+        <div id="mainMenu" class="screen active">
+            <div class="title-container">
+                <h1>FROGGY INDUS ADVENTURE</h1>
+                <p>Jelajahi Peradaban India Kuno (Maurya, Gupta & Mughal)</p>
+            </div>
+
+            <div class="menu-buttons">
+                <button class="btn-main" onclick="startGame('solo')">👤 Solo Mode</button>
+                <button class="btn-main" onclick="startGame('duel')">⚔️ Duel Mode (2 Player)</button>
+                <button class="btn-main" onclick="startGame('squad')">👥 Squad Mode (4 Player)</button>
+                
+                <div class="btn-secondary-group">
+                    <button class="btn-secondary" onclick="openModal('instructionsModal')">📖 Petunjuk</button>
+                    <button class="btn-secondary" onclick="openModal('leaderboardModal')">🏆 Peringkat</button>
+                    <button class="btn-secondary" onclick="openModal('settingsModal')">⚙️ Pengaturan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <!-- Dynamic Viewports injected by JS -->
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsScreen" class="screen">
+            <div class="results-card">
+                <h2>HASIL PERMAINAN</h2>
+                <table class="leaderboard-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Pemain</th>
+                            <th>Skor</th>
+                            <th>Benar</th>
+                            <th>Salah</th>
+                            <th>Akurasi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <!-- Injected by JS -->
+                    </tbody>
+                </table>
+                <div class="btn-secondary-group">
+                    <button class="btn-main" style="flex:1" onclick="restartGame()">🔄 Main Lagi</button>
+                    <button class="btn-secondary" onclick="showScreen('mainMenu')">🏠 Menu Utama</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="instructionsModal" class="modal">
+        <div class="modal-content">
+            <h2>Petunjuk Permainan</h2>
+            <p><strong>Cara Bermain:</strong></p>
+            <ul>
+                <li>Kendalikan katak melompati teratai di Sungai Indus.</li>
+                <li>Jawab pertanyaan sejarah Peradaban India Kuno dengan memilih daun yang tepat.</li>
+                <li><strong>Jawaban Benar:</strong> +10 Skor & Combo Bonus!</li>
+                <li><strong>Jawaban Salah:</strong> Katak jatuh ke air & kehilangan 1 nyawa.</li>
+                <li>Permainan berakhir jika nyawa habis atau soal selesai.</li>
+            </ul>
+            <button class="btn-close" onclick="closeModal('instructionsModal')">Mengerti</button>
+        </div>
+    </div>
+
+    <div id="leaderboardModal" class="modal">
+        <div class="modal-content">
+            <h2>Peringkat Lokal</h2>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Mode</th>
+                        <th>Skor Terbaik</th>
+                    </tr>
+                </thead>
+                <tbody id="highScoresBody">
+                    <!-- Injected by JS -->
+                </tbody>
+            </table>
+            <button class="btn-close" onclick="closeModal('leaderboardModal')">Tutup</button>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h2>Pengaturan Game</h2>
+            <p><strong>Volume BGM:</strong></p>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5" onchange="adjustVolume(this.value)" style="width: 100%; margin-bottom: 20px;">
+            <p><strong>Efek Hujan:</strong></p>
+            <button class="btn-secondary" style="width: 100%; margin-bottom: 20px;" onclick="toggleRain()">Toggle Rain Effect</button>
+            <button class="btn-close" onclick="closeModal('settingsModal')">Simpan</button>
+        </div>
+    </div>
+
+    <!-- Audio Synthesis & Web Audio API Engine -->
+    <script>
+        // Web Audio Sound Generator for zero-dependency Audio
+        class SoundEngine {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.bgmOsc = null;
+                this.bgmGain = null;
+                this.isMuted = false;
+                this.bgmPlaying = false;
+            }
+
+            playCorrect() {
+                if(this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+                osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.3); // A5
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+            }
+
+            playSplash() {
+                if(this.ctx.state === 'suspended') this.ctx.resume();
+                const bufferSize = this.ctx.sampleRate * 0.4;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1000, this.ctx.currentTime);
+                filter.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.4);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+
+            startBGM() {
+                if (this.bgmPlaying) return;
+                if(this.ctx.state === 'suspended') this.ctx.resume();
+                
+                this.bgmGain = this.ctx.createGain();
+                this.bgmGain.gain.value = 0.05;
+                this.bgmGain.connect(this.ctx.destination);
+
+                // Simple soothing synth loop
+                let notes = [220, 247.94, 261.63, 293.66, 329.63, 392.00];
+                let step = 0;
+
+                const playNote = () => {
+                    if (!this.bgmPlaying) return;
+                    let osc = this.ctx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(notes[step % notes.length], this.ctx.currentTime);
+                    let noteGain = this.ctx.createGain();
+                    noteGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    noteGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
+                    
+                    osc.connect(noteGain);
+                    noteGain.connect(this.bgmGain);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.8);
+                    
+                    step++;
+                    setTimeout(playNote, 400);
+                };
+
+                this.bgmPlaying = true;
+                playNote();
+            }
+
+            stopBGM() {
+                this.bgmPlaying = false;
+            }
+
+            setVolume(val) {
+                if (this.bgmGain) {
+                    this.bgmGain.gain.value = val * 0.1;
+                }
+            }
+        }
+
+        const audioEngine = new SoundEngine();
+
+        function toggleBGM() {
+            const btn = document.getElementById('bgmBtn');
+            if (audioEngine.bgmPlaying) {
+                audioEngine.stopBGM();
+                btn.innerHTML = '🔇 Music';
+            } else {
+                audioEngine.startBGM();
+                btn.innerHTML = '🔊 Music';
+            }
+        }
+
+        function adjustVolume(val) {
+            audioEngine.setVolume(val);
+        }
+    </script>
+
+    <!-- Canvas Animation System (River, Fog, Rain, Ripples) -->
+    <script>
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let rainParticles = [];
+        let ripples = [];
+        let showRain = true;
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class RainDrop {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * -height;
+                this.vy = 8 + Math.random() * 6;
+                this.len = 10 + Math.random() * 15;
+            }
+
+            update() {
+                this.y += this.vy;
+                if (this.y > height) {
+                    if (Math.random() < 0.3) {
+                        ripples.push(new Ripple(this.x, height - 10 - Math.random() * 50));
+                    }
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x, this.y + this.len);
+                ctx.stroke();
+            }
+        }
+
+        class Ripple {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 2;
+                this.maxRadius = 15 + Math.random() * 10;
+                this.alpha = 0.6;
+            }
+
+            update() {
+                this.radius += 0.5;
+                this.alpha -= 0.02;
+            }
+
+            draw() {
+                if (this.alpha <= 0) return;
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        // Init Rain
+        for (let i = 0; i < 80; i++) {
+            rainParticles.push(new RainDrop());
+        }
+
+        let time = 0;
+        function animateBackground() {
+            time += 0.02;
+            
+            // River Base Gradient
+            let grad = ctx.createLinearGradient(0, 0, 0, height);
+            grad.addColorStop(0, '#0d253f');
+            grad.addColorStop(0.5, '#0f3854');
+            grad.addColorStop(1, '#081c24');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, width, height);
+
+            // Water Waves
+            ctx.strokeStyle = 'rgba(23, 185, 120, 0.15)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                for (let x = 0; x < width; x += 20) {
+                    let y = height * 0.3 + i * 80 + Math.sin(time + x * 0.01 + i) * 12;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            // Draw Rain
+            if (showRain) {
+                rainParticles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+            }
+
+            // Draw Ripples
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                ripples[i].update();
+                ripples[i].draw();
+                if (ripples[i].alpha <= 0) ripples.splice(i, 1);
+            }
+
+            requestAnimationFrame(animateBackground);
+        }
+
+        animateBackground();
+
+        function toggleRain() {
+            showRain = !showRain;
+        }
+
+        function triggerSplashAt(x, y) {
+            audioEngine.playSplash();
+            for (let i = 0; i < 3; i++) {
+                ripples.push(new Ripple(x + (Math.random() - 0.5) * 20, y + (Math.random() - 0.5) * 20));
+            }
+        }
+    </script>
+
+    <!-- Question Bank (50 Questions on Maurya, Gupta, Mughal) -->
+    <script>
+        const QUESTION_BANK = [
+            // Dinasti Maurya
+            { q: "Siapa pendiri Dinasti Maurya?", options: ["Chandragupta Maurya", "Akbar", "Harsha", "Babur"], answer: 0 },
+            { q: "Raja Maurya yang terkenal menyebarkan agama Buddha adalah?", options: ["Asoka", "Bindusara", "Chandragupta I", "Humayun"], answer: 0 },
+            { q: "Ibu kota terkenal dari kekaisaran Maurya adalah?", options: ["Pataliputra", "Delhi", "Agra", "Varanasi"], answer: 0 },
+            { q: "Penasihat terkenal Chandragupta Maurya penulis Arthasastra adalah?", options: ["Chanakya (Kautilya)", "Kalidasa", "Birbal", "Tansen"], answer: 0 },
+            { q: "Perang dahsyat yang menyadarkan Raja Asoka hingga memeluk Buddha adalah?", options: ["Perang Kalinga", "Perang Panipat", "Perang Tarain", "Perang Hydaspes"], answer: 0 },
+            { q: "Simbol Empat Singa peninggalan Maurya diabadikan sebagai lambang negara?", options: ["India", "Sri Lanka", "Nepal", "Myanmar"], answer: 0 },
+            { q: "Prasasti-prasasti Raja Asoka ditulis pada media?", options: ["Pilar Batu & Gua", "Daun Lontar", "Kertas Kulit", "Lempengan Emas"], answer: 0 },
+            { q: "Utusan Yunani yang dikirim Seleukos Nicator ke istana Maurya adalah?", options: ["Megasthenes", "Herodotus", "I-Tsing", "Xuanzang"], answer: 0 },
+            { q: "Buku karya Megasthenes tentang India kuno berjudul?", options: ["Indika", "Geographia", "Histories", "Si-Yu-Ki"], answer: 0 },
+            { q: "Sistem pemerintahan Maurya bercorak?", options: ["Sentralisasi Kuat", "Desentralisasi", "Demokrasi", "Republik"], answer: 0 },
+            { q: "Agama yang dianut Chandragupta Maurya di akhir hidupnya adalah?", options: ["Jainisme", "Buddha", "Hindu", "Zoroaster"], answer: 0 },
+            { q: "Siapa putra Chandragupta Maurya yang meneruskan tahta?", options: ["Bindusara", "Asoka", "Dasaratha", "Bimbisara"], answer: 0 },
+            { q: "Pilar Asoka didirikan di berbagai daerah untuk menyebarkan ajaran?", options: ["Dhamma (Dharma)", "Veda", "Sufisme", "Karma Yoga"], answer: 0 },
+            { q: "Gaya arsitektur stupa terkenal peninggalan Maurya terdapat di?", options: ["Sanchi", "Taj Mahal", "Ajanta", "Khajuraho"], answer: 0 },
+            { q: "Kemunduran Maurya terjadi setelah wafatnya?", options: ["Asoka", "Chandragupta", "Bindusara", "Brihadratha"], answer: 0 },
+            { q: "Raja terakhir Dinasti Maurya adalah?", options: ["Brihadratha", "Pushyamitra", "Agnimitra", "SaliSuka"], answer: 0 },
+
+            // Dinasti Gupta
+            { q: "Dinasti Gupta dikenal dalam sejarah India sebagai?", options: ["Zaman Keemasan (Golden Age)", "Zaman Kegelapan", "Era Perunggu", "Masa Invasi"], answer: 0 },
+            { q: "Pendiri utama kejayaan Dinasti Gupta adalah?", options: ["Chandragupta I", "Samudragupta", "Harsha", "Skandagupta"], answer: 0 },
+            { q: "Raja Gupta yang dijuluki 'Napoleon dari India' oleh ilmuwan Barat adalah?", options: ["Samudragupta", "Chandragupta II", "Kumaragupta", "Bhanugupta"], answer: 0 },
+            { q: "Penyair dan dramawan terbesar masa Gupta pengarang Shakuntala adalah?", options: ["Kalidasa", "Banabhatta", "Bhasa", "Harisena"], answer: 0 },
+            { q: "Cendekiawan Gupta penemu konsep angka Nol dan perhitungan Pi adalah?", options: ["Aryabhata", "Varahamihira", "Brahmagupta", "Charaka"], answer: 0 },
+            { q: "Sistem keagamaan yang berkembang sangat pesat pada masa Gupta adalah?", options: ["Hindu (Vaisnavisme & Saivisme)", "Islam", "Kristen", "Shinto"], answer: 0 },
+            { q: "Universitas kuno terkenal yang dibangun pada masa Gupta adalah?", options: ["Nalanda", "Taxila", "Vikramashila", "Nadia"], answer: 0 },
+            { q: "Gua dengan lukisan dinding (mural) bertema Buddha karya Gupta adalah?", options: ["Ajanta", "Ellora", "Elephanta", "Karla"], answer: 0 },
+            { q: "Musafir Tiongkok yang mengunjungi India pada masa Chandragupta II adalah?", options: ["Faxian (Fa-Hien)", "Xuanzang", "I-Tsing", "Zheng He"], answer: 0 },
+            { q: "Raja Gupta yang memakai gelar 'Vikramaditya' adalah?", options: ["Chandragupta II", "Samudragupta", "Kumaragupta", "Skandagupta"], answer: 0 },
+            { q: "Komoditas perdagangan utama Kerajaan Gupta yang dieskpor adalah?", options: ["Rempah & Tekstil Silk", "Minyak Bumi", "Gandum", "Kertas"], answer: 0 },
+            { q: "Suku pengembara dari Asia Tengah yang menyerang dan melemahkan Gupta adalah?", options: ["Huna (Huns)", "Mongol", "Kushan", "Saka"], answer: 0 },
+            { q: "Pilar Besi terkenal di Delhi yang tidak berkarat dibuat pada masa?", options: ["Gupta", "Maurya", "Mughal", "Chola"], answer: 0 },
+            { q: "Bahasa resmi sastra dan administrasi pada masa Gupta adalah?", options: ["Sanskerta", "Pali", "Prakrit", "Urdu"], answer: 0 },
+            { q: "Buku astronomi terkenal 'Aryabhatiya' ditulis oleh?", options: ["Aryabhata", "Varahamihira", "Susruta", "Bhaskara"], answer: 0 },
+            { q: "Dokter kuno penyusun kitab bedah pada masa Gupta bernama?", options: ["Susruta", "Charaka", "Dhanvantari", "Patanjali"], answer: 0 },
+
+            // Dinasti Mughal
+            { q: "Pendiri Dinasti Mughal di India adalah?", options: ["Babur", "Humayun", "Akbar", "Shah Jahan"], answer: 0 },
+            { q: "Kemenangan Babur dalam mendirikan Mughal diraih pada Pertempuran?", options: ["Panipat I", "Khanwa", "Plassey", "Buxar"], answer: 0 },
+            { q: "Raja terbesar Mughal yang menerapkan toleransi beragama tinggi adalah?", options: ["Akbar Agung", "Aurangzeb", "Jahangir", "Shah Alam"], answer: 0 },
+            { q: "Monumen megah Taj Mahal dibangun oleh Shah Jahan untuk mengenang?", options: ["Mumtaz Mahal", "Jodha Bai", "Nur Jahan", "Gauhar Ara"], answer: 0 },
+            { q: "Kota benteng yang pernah menjadi ibu kota buatan Akbar adalah?", options: ["Fatehpur Sikri", "Daulatabad", "Hyderabad", "Lahore"], answer: 0 },
+            { q: "Bahasa baru yang berkembang dari percampuran Persia, Arab, dan Hindi adalah?", options: ["Urdu", "Punjabi", "Bengali", "Gujarati"], answer: 0 },
+            { q: "Konsep pemikiran toleransi agama universal yang dicetuskan Akbar disebut?", options: ["Sulh-i-Kul", "Din-i-Ilahi", "Mansabdari", "Jizya"], answer: 0 },
+            { q: "Raja Mughal terakhir sebelum dikuasai sepenuhnya oleh Inggris adalah?", options: ["Bahadur Shah II", "Shah Alam II", "Akbar II", "Aurangzeb"], answer: 0 },
+            { q: "Karya arsitektur Benteng Merah (Red Fort) terdapat di kota?", options: ["Delhi", "Agra", "Jaipur", "Lucknow"], answer: 0 },
+            { q: "Sistem administrasi feodal kepegawaian masa Mughal dinamakan?", options: ["Mansabdari", "Zamindari", "Jagirdari", "Subah"], answer: 0 },
+            { q: "Raja Mughal pengagum seni lukis dan kebun taman indah adalah?", options: ["Jahangir", "Babur", "Aurangzeb", "Humayun"], answer: 0 },
+            { q: "Istri Jahangir yang memegang pengaruh politik kuat di istana adalah?", options: ["Nur Jahan", "Mumtaz Mahal", "Jodha Bai", "Mariam"], answer: 0 },
+            { q: "Raja Mughal yang sangat puritan dan menghapus kebijakan toleransi adalah?", options: ["Aurangzeb", "Shah Jahan", "Akbar", "Humayun"], answer: 0 },
+            { q: "Autobiografi karya Babur yang ditulis dalam bahasa Turki Chagatai adalah?", options: ["Baburnama", "Akbarnama", "Tuzk-e-Jahangiri", "Humayunnama"], answer: 0 },
+            { q: "Biografi Resmi Akbar yang ditulis oleh Abul Fazl berjudul?", options: ["Akbarnama", "Ain-i-Akbari", "Shahjahannama", "Tarikhi Rashidi"], answer: 0 },
+            { q: "Mantra / lagu kebangsaan musik klasik Hindustan mencapai puncak pada masa penyanyi?", options: ["Tansen", "Birbal", "Todar Mal", "Man Singh"], answer: 0 },
+
+            // Lembah Sungai Indus
+            { q: "Dua kota kuno utama pusat Peradaban Lembah Sungai Indus adalah?", options: ["Harappa & Mohenjo-Daro", "Babilonia & Ur", "Memphis & Thebes", "Sparta & Athena"], answer: 0 },
+            { q: "Sistem tata kota Lembah Sungai Indus dikenal sangat maju karena menggunakan?", options: ["Grid System & Drainase Tertutup", "Dinding Tanah Liat", "Menara Bertingkat", "Rumah Pohon"], answer: 0 },
+            { q: "Bangunan besar di Mohenjo-Daro yang diperkirakan untuk ritual penyucian adalah?", options: ["Great Bath (Pemandian Agung)", "Ziggurat", "Piramida", "Colosseum"], answer: 0 }
+        ];
+    </script>
+
+    <!-- Game Logic Controller Engine -->
+    <script>
+        let currentMode = 'solo'; // solo, duel, squad
+        let playersData = [];
+        let globalQuestions = [];
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function toggleFullscreen() {
+            const btn = document.getElementById('fullscreenBtn');
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+                btn.innerHTML = '🗗 Exit Full Screen';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    btn.innerHTML = '⛶ Full Screen';
+                }
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            if(id === 'leaderboardModal') updateLeaderboardDisplay();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startGame(mode) {
+            currentMode = mode;
+            globalQuestions = shuffle([...QUESTION_BANK]);
+            
+            let playerCount = mode === 'solo' ? 1 : (mode === 'duel' ? 2 : 4);
+            playersData = [];
+
+            for (let i = 0; i < playerCount; i++) {
+                playersData.push({
+                    id: i + 1,
+                    name: `Player ${i + 1}`,
+                    score: 0,
+                    lives: 3,
+                    combo: 0,
+                    correct: 0,
+                    wrong: 0,
+                    qIndex: 0,
+                    questions: shuffle([...globalQuestions])
+                });
+            }
+
+            renderGameLayout();
+            showScreen('gameScreen');
+            audioEngine.startBGM();
+        }
+
+        function renderGameLayout() {
+            const gameScreen = document.getElementById('gameScreen');
+            gameScreen.className = `screen active mode-${currentMode}`;
+            gameScreen.innerHTML = '';
+
+            playersData.forEach((p, idx) => {
+                const viewport = document.createElement('div');
+                viewport.className = `player-viewport p${p.id}`;
+                viewport.id = `viewport-${p.id}`;
+
+                viewport.innerHTML = `
+                    <div class="player-header">
+                        <span class="player-badge">Player ${p.id}</span>
+                        <div class="stat-box">
+                            <span class="lives-box" id="lives-${p.id}">❤️❤️❤️</span>
+                            <span class="score-box" id="score-${p.id}">0 PTS</span>
+                        </div>
+                    </div>
+                    <div class="sim-area" id="sim-${p.id}">
+                        <canvas class="viewport-canvas" id="canvas-vp-${p.id}"></canvas>
+                        <div class="question-card">
+                            <p id="qtext-${p.id}">Loading...</p>
+                        </div>
+                        <div class="frog-container" id="frog-${p.id}">
+                            <svg class="frog-svg" viewBox="0 0 100 100">
+                                <circle cx="50" cy="55" r="35" fill="#4caf50" />
+                                <circle cx="35" cy="25" r="12" fill="#4caf50" />
+                                <circle cx="65" cy="25" r="12" fill="#4caf50" />
+                                <circle cx="35" cy="25" r="5" fill="#fff" />
+                                <circle cx="65" cy="25" r="5" fill="#fff" />
+                                <circle cx="35" cy="25" r="2" fill="#000" />
+                                <circle cx="65" cy="25" r="2" fill="#000" />
+                                <path d="M 35 65 Q 50 75 65 65" stroke="#1b5e20" stroke-width="4" fill="none" />
+                            </svg>
+                        </div>
+                        <div class="options-grid" id="opts-${p.id}">
+                            <!-- Options injected -->
+                        </div>
+                    </div>
+                `;
+                gameScreen.appendChild(viewport);
+                loadQuestionForPlayer(p.id);
+            });
+        }
+
+        function loadQuestionForPlayer(pId) {
+            const player = playersData.find(p => p.id === pId);
+            if (!player) return;
+
+            if (player.lives <= 0 || player.qIndex >= player.questions.length) {
+                checkGameOver();
+                return;
+            }
+
+            const currentQ = player.questions[player.qIndex];
+            document.getElementById(`qtext-${pId}`).innerText = currentQ.q;
+
+            const optsGrid = document.getElementById(`opts-${pId}`);
+            optsGrid.innerHTML = '';
+
+            currentQ.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'leaf-btn';
+                btn.innerText = opt;
+                btn.onclick = () => handleAnswer(pId, idx);
+                optsGrid.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(pId, chosenIdx) {
+            const player = playersData.find(p => p.id === pId);
+            if (!player || player.lives <= 0) return;
+
+            const currentQ = player.questions[player.qIndex];
+            const frog = document.getElementById(`frog-${pId}`);
+            const viewport = document.getElementById(`viewport-${pId}`);
+            const rect = viewport.getBoundingClientRect();
+
+            if (chosenIdx === currentQ.answer) {
+                // Correct Answer
+                audioEngine.playCorrect();
+                player.score += 10 + (player.combo * 5);
+                player.combo++;
+                player.correct++;
+
+                frog.classList.remove('happy', 'sinking');
+                void frog.offsetWidth; // trigger reflow
+                frog.classList.add('happy');
+
+                updateStatsDisplay(pId);
+                player.qIndex++;
+
+                setTimeout(() => {
+                    frog.classList.remove('happy');
+                    loadQuestionForPlayer(pId);
+                }, 600);
+
+            } else {
+                // Wrong Answer
+                player.lives--;
+                player.combo = 0;
+                player.wrong++;
+
+                triggerSplashAt(rect.width / 2, rect.height - 100);
+
+                frog.classList.remove('happy', 'sinking');
+                void frog.offsetWidth;
+                frog.classList.add('sinking');
+
+                updateStatsDisplay(pId);
+
+                setTimeout(() => {
+                    frog.classList.remove('sinking');
+                    if (player.lives > 0) {
+                        player.qIndex++;
+                        loadQuestionForPlayer(pId);
+                    } else {
+                        disablePlayerViewport(pId);
+                        checkGameOver();
+                    }
+                }, 800);
+            }
+        }
+
+        function updateStatsDisplay(pId) {
+            const player = playersData.find(p => p.id === pId);
+            document.getElementById(`score-${pId}`).innerText = `${player.score} PTS`;
+            let hearts = '❤️'.repeat(Math.max(0, player.lives));
+            document.getElementById(`lives-${pId}`).innerText = hearts || '💀';
+        }
+
+        function disablePlayerViewport(pId) {
+            const optsGrid = document.getElementById(`opts-${pId}`);
+            optsGrid.innerHTML = `<h3 style="color:#ff4d4d; grid-column:span 2; text-align:center;">GAME OVER</h3>`;
+        }
+
+        function checkGameOver() {
+            const allFinished = playersData.every(p => p.lives <= 0 || p.qIndex >= p.questions.length);
+            if (allFinished) {
+                setTimeout(showResults, 1000);
+            }
+        }
+
+        function showResults() {
+            // Sort by score descending
+            const sorted = [...playersData].sort((a, b) => b.score - a.score);
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+
+            sorted.forEach((p, index) => {
+                let total = p.correct + p.wrong;
+                let accuracy = total > 0 ? Math.round((p.correct / total) * 100) : 0;
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:bold; color:${getPlayerColor(p.id)}">Player ${p.id} ${index === 0 ? '👑' : ''}</td>
+                    <td style="color:var(--gold-bright); font-weight:bold;">${p.score}</td>
+                    <td>${p.correct}</td>
+                    <td>${p.wrong}</td>
+                    <td>${accuracy}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            saveHighScore(sorted[0].score);
+            showScreen('resultsScreen');
+        }
+
+        function getPlayerColor(id) {
+            switch(id) {
+                case 1: return 'var(--p1-color)';
+                case 2: return 'var(--p2-color)';
+                case 3: return 'var(--p3-color)';
+                case 4: return 'var(--p4-color)';
+                default: return '#fff';
+            }
+        }
+
+        function restartGame() {
+            startGame(currentMode);
+        }
+
+        // Highscore Storage
+        function saveHighScore(score) {
+            let currentBest = localStorage.getItem(`indus_high_${currentMode}`) || 0;
+            if (score > currentBest) {
+                localStorage.setItem(`indus_high_${currentMode}`, score);
+            }
+        }
+
+        function updateLeaderboardDisplay() {
+            const tbody = document.getElementById('highScoresBody');
+            tbody.innerHTML = `
+                <tr><td>Solo Mode</td><td>${localStorage.getItem('indus_high_solo') || 0} PTS</td></tr>
+                <tr><td>Duel Mode</td><td>${localStorage.getItem('indus_high_duel') || 0} PTS</td></tr>
+                <tr><td>Squad Mode</td><td>${localStorage.getItem('indus_high_squad') || 0} PTS</td></tr>
+            `;
+        }
+    </script>
+</body>
+</html>
+"""
+
+# Save to html file
+file_path = "froggy_indus_adventure.html"
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print(f"File created successfully: {file_path}")
